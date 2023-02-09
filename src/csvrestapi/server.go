@@ -66,6 +66,7 @@ func (srv *Server) CsvHandler(c *gin.Context) {
 	type (
 		CsvRequests struct {
 			Files   []string          `json:"files"`
+			Folders []string          `json:"folders"`
 			Filters map[string]string `json:"filters"`
 		}
 	)
@@ -82,7 +83,7 @@ func (srv *Server) CsvHandler(c *gin.Context) {
 		return
 	}
 
-	if csvFinder, err = NewCsvReader(csvReq.Files, csvReq.Filters); err != nil {
+	if csvFinder, err = NewCsvReader(csvReq.Files, csvReq.Folders, csvReq.Filters); err != nil {
 		c.JSON(500, gin.H{
 			"error": err,
 		})
@@ -96,8 +97,8 @@ func (srv *Server) CsvHandler(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"length":        len(resp),
-		"matched_elems": resp,
+		"length": len(resp),
+		//"matched_elems": resp,
 	})
 }
 

@@ -3,6 +3,7 @@ package csvrestapi
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -12,14 +13,39 @@ type (
 	CsvFinder struct {
 		csvReq   map[string]string `json:"request"`
 		Files    []string          `json:"files"`
+		Folders  []string          `json:"folders"`
 		Response []interface{}     `json:"response"`
 	}
 )
 
-func NewCsvReader(files []string, csvReq map[string]string) (finder *CsvFinder, err error) {
+func NewCsvReader(files, folders []string, csvReq map[string]string) (finder *CsvFinder, err error) {
 	finder = &CsvFinder{
-		Files:  files,
-		csvReq: csvReq,
+		Files:   files,
+		Folders: folders,
+		csvReq:  csvReq,
+	}
+	if err = finder.findFilesInFolders(); err != nil {
+		return
+	}
+	return
+}
+
+func (finder *CsvFinder) findFilesInFolders() (err error) {
+	for _, folder := range finder.Folders {
+		var (
+			files []fs.FileInfo
+		)
+		if files, err = ioutil.ReadDir(folder); err != nil {
+			log.Println(err)
+			continue
+		}
+		for _, file := range files {
+			fileName := file.Name()
+			if !strings.HasSuffix(fileName, ".csv") {
+				continue
+			}
+			finder.Files = append(finder.Files, fmt.Sprintf("%s/%s", folder, fileName))
+		}
 	}
 	return
 }
