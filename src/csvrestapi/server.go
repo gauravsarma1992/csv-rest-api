@@ -80,11 +80,13 @@ func (srv *Server) CsvFolderReadHandler(c *gin.Context) {
 		c.JSON(400, gin.H{
 			"error": "Folder name cannot be empty",
 		})
+		return
 	}
 	if folderFiles, err = ioutil.ReadDir(folderName); err != nil {
 		c.JSON(400, gin.H{
 			"error": "No files present in folder",
 		})
+		return
 	}
 	for _, file := range folderFiles {
 		fileName := file.Name()
@@ -97,6 +99,7 @@ func (srv *Server) CsvFolderReadHandler(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"folder_files": folderFileNames,
 	})
+	return
 }
 
 func (srv *Server) CsvHandler(c *gin.Context) {
@@ -137,6 +140,7 @@ func (srv *Server) CsvHandler(c *gin.Context) {
 		"length":        len(resp),
 		"matched_elems": resp,
 	})
+	return
 }
 
 func (srv *Server) Run() (err error) {
