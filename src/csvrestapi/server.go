@@ -3,9 +3,12 @@ package csvrestapi
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
+	"strings"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -51,14 +54,48 @@ func (srv *Server) setConfig() (err error) {
 }
 
 func (srv *Server) setRoutes() (err error) {
+	srv.apiEngine.Use(cors.Default())
 	srv.apiEngine.GET("/ping", srv.PingHandler)
 	srv.apiEngine.POST("/csv", srv.CsvHandler)
+	srv.apiEngine.GET("/csv_folder", srv.CsvFolderReadHandler)
 	return
 }
 
 func (srv *Server) PingHandler(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"message": "pong",
+	})
+}
+
+func (srv *Server) CsvFolderReadHandler(c *gin.Context) {
+	var (
+		folderName      string
+		err             error
+		folderFileNames []string
+		folderFiles     []fs.FileInfo
+	)
+	folderName = c.Query("folder_name")
+	log.Println("here", folderName)
+	if folderName == "" {
+		c.JSON(400, gin.H{
+			"error": "Folder name cannot be empty",
+		})
+	}
+	if folderFiles, err = ioutil.ReadDir(folderName); err != nil {
+		c.JSON(400, gin.H{
+			"error": "No files present in folder",
+		})
+	}
+	for _, file := range folderFiles {
+		fileName := file.Name()
+		if !strings.HasSuffix(fileName, ".csv") {
+			continue
+		}
+		folderFileNames = append(folderFileNames, fileName)
+	}
+
+	c.JSON(200, gin.H{
+		"folder_files": folderFileNames,
 	})
 }
 
@@ -97,8 +134,8 @@ func (srv *Server) CsvHandler(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"length": len(resp),
-		//"matched_elems": resp,
+		"length":        len(resp),
+		"matched_elems": resp,
 	})
 }
 
